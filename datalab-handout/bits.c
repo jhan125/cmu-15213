@@ -171,12 +171,14 @@ int isTmax(int x) {
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
  *   where bits are numbered from 0 (least significant) to 31 (most significant)
  *   Examples allOddBits(0xFFFFFFFD) = 0, allOddBits(0xAAAAAAAA) = 1
- *   Legal ops: ! ~ & ^ | + << >>
+ *   Legal ops: ! ~ & ^ | + <<
  *   Max ops: 12
  *   Rating: 2
  */
 int allOddBits(int x) {
-  return 2;
+  int mask = (0xAA << 8) + 0xAA;
+  mask = (mask << 16) + mask;
+  return !((x & mask) ^ mask);
 }
 /* 
  * negate - return -x 
@@ -186,7 +188,7 @@ int allOddBits(int x) {
  *   Rating: 2
  */
 int negate(int x) {
-  return 2;
+  return ~x + 1;
 }
 //3
 /* 
@@ -199,7 +201,14 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+  /*
+    1 --> x > 0x30
+    0 --> x < 0x39
+  */
+  int pos = !(x >> 31);
+  int left = !((x + (~0x30) + 1) >> 31);
+  int right = !!((x + (~0x3a) + 1) >> 31);
+  return pos & left & right;
 }
 /* 
  * conditional - same as x ? y : z 
@@ -209,7 +218,14 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+  /*
+    !!x turn condition x to 1 or 0
+    if 1, then we want to return y, -1&y == y, at the same time 0&z == 0
+    if 0, then we want to return z, (~0)&z == z, at the same time 0&y == y
+  */
+  x = !!x;
+  int negx = ~x + 1;
+  return (negx & y)|(~negx & z);
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -219,7 +235,10 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+  int posx = !(x>>31);
+  int posy = !(y>>31);
+  int diff = !!((x + (~(y+1) + 1)) >> 31);
+  return ((!posx) & posy) | ((((!posx) & (!posy)) | (posx & posy)) & diff);
 }
 //4
 /* 
